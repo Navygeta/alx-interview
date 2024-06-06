@@ -1,37 +1,53 @@
 #!/usr/bin/node
 
 const request = require('request');
-const filmId = process.argv[2];
-const url = `https://swapi-api.hbtn.io/api/films/${filmId}`;
 
-request(url, (err, response, body) => {
-  if (err) {
-    console.error(err);
-    return;
-  }
-  const film = JSON.parse(body);
-  const characters = film.characters;
-  
-  const printCharacterName = (characterUrl, callback) => {
-    request(characterUrl, (err, response, body) => {
-      if (err) {
-        console.error(err);
-        return callback(err);
-      }
-      const character = JSON.parse(body);
-      console.log(character.name);
-      callback();
-    });
-  };
+const movieId = process.argv[2];
+const filmEndPoint = 'https://swapi-api.hbtn.io/api/films/' + movieId;
+let people = [];
+const names = [];
 
-  const printAllCharacters = (index) => {
-    if (index >= characters.length) {
-      return;
+const requestCharacters = async () => {
+  await new Promise(resolve => request(filmEndPoint, (err, res, body) => {
+    if (err || res.statusCode !== 200) {
+      console.error('Error: ', err, '| StatusCode: ', res.statusCode);
+    } else {
+      const jsonBody = JSON.parse(body);
+      people = jsonBody.characters;
+      resolve();
     }
-    printCharacterName(characters[index], () => {
-      printAllCharacters(index + 1);
-    });
-  };
+  }));
+};
 
-  printAllCharacters(0);
-});
+const requestNames = async () => {
+  if (people.length > 0) {
+    for (const p of people) {
+      await new Promise(resolve => request(p, (err, res, body) => {
+        if (err || res.statusCode !== 200) {
+          console.error('Error: ', err, '| StatusCode: ', res.statusCode);
+        } else {
+          const jsonBody = JSON.parse(body);
+          names.push(jsonBody.name);
+          resolve();
+        }
+      }));
+    }
+  } else {
+    console.error('Error: Got no Characters for some reason');
+  }
+};
+
+const getCharNames = async () => {
+  await requestCharacters();
+  await requestNames();
+
+  for (const n of names) {
+    if (n === names[names.length - 1]) {
+      process.stdout.write(n);
+    } else {
+      process.stdout.write(n + '\n');
+    }
+  }
+};
+
+getCharNames();
