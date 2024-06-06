@@ -1,53 +1,47 @@
 #!/usr/bin/node
 
-const request = require('request');
+const request = require('request'); // Import the request module
+const filmId = process.argv[2]; // Get the Movie ID from the command line arguments
+const url = `https://swapi-api.hbtn.io/api/films/${filmId}`; // Construct the URL for the film
 
-const movieId = process.argv[2];
-const filmEndPoint = 'https://swapi-api.hbtn.io/api/films/' + movieId;
-let people = [];
-const names = [];
-
-const requestCharacters = async () => {
-  await new Promise(resolve => request(filmEndPoint, (err, res, body) => {
-    if (err || res.statusCode !== 200) {
-      console.error('Error: ', err, '| StatusCode: ', res.statusCode);
-    } else {
-      const jsonBody = JSON.parse(body);
-      people = jsonBody.characters;
-      resolve();
-    }
-  }));
-};
-
-const requestNames = async () => {
-  if (people.length > 0) {
-    for (const p of people) {
-      await new Promise(resolve => request(p, (err, res, body) => {
-        if (err || res.statusCode !== 200) {
-          console.error('Error: ', err, '| StatusCode: ', res.statusCode);
-        } else {
-          const jsonBody = JSON.parse(body);
-          names.push(jsonBody.name);
-          resolve();
-        }
-      }));
-    }
-  } else {
-    console.error('Error: Got no Characters for some reason');
+// Request the film data from the Star Wars API
+request(url, (err, response, body) => {
+  if (err) {
+    console.error(err); // Log any error that occurs
+    return;
   }
-};
+  const film = JSON.parse(body); // Parse the response body to get the film data
+  const characters = film.characters; // Extract the list of character URLs
 
-const getCharNames = async () => {
-  await requestCharacters();
-  await requestNames();
+  /**
+   * Function to request and print a character's name
+   * @param {string} characterUrl - The URL of the character
+   * @param {function} callback - The callback function to execute after printing the name
+   */
+  const printCharacterName = (characterUrl, callback) => {
+    request(characterUrl, (err, response, body) => {
+      if (err) {
+        console.error(err); // Log any error that occurs
+        return callback(err); // Return error to callback
+      }
+      const character = JSON.parse(body); // Parse the response body to get the character data
+      console.log(character.name); // Print the character's name
+      callback(); // Invoke the callback to proceed to the next character
+    });
+  };
 
-  for (const n of names) {
-    if (n === names[names.length - 1]) {
-      process.stdout.write(n);
-    } else {
-      process.stdout.write(n + '\n');
+  /**
+   * Function to recursively print all character names
+   * @param {number} index - The current index in the characters array
+   */
+  const printAllCharacters = (index) => {
+    if (index >= characters.length) {
+      return; // Stop recursion if all characters have been printed
     }
-  }
-};
+    printCharacterName(characters[index], () => {
+      printAllCharacters(index + 1); // Move to the next character
+    });
+  };
 
-getCharNames();
+  printAllCharacters(0); // Start printing characters from the first one
+});
