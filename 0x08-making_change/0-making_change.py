@@ -1,15 +1,20 @@
 #!/usr/bin/python3
+"""Making Change function"""
 
-def makeChange(coins, total):
+
+def make_change(coins, total):
+    """Determines the fewest number of coins needed to meet a given total."""
     if total <= 0:
         return 0
 
-    # Initialize dp array with total + 1 (which acts as "infinity")
-    dp = [total + 1] * (total + 1)
-    dp[0] = 0
+    coins.sort(reverse=True)
+    count, value, index = 0, total, 0
 
-    for coin in coins:
-        for x in range(coin, total + 1):
-            dp[x] = min(dp[x], dp[x - coin] + 1)
+    while value > 0 and index < len(coins):
+        if value >= coins[index]:
+            value -= coins[index]
+            count += 1
+        else:
+            index += 1
 
-    return dp[total] if dp[total] != total + 1 else -1
+    return count if value == 0 else -
