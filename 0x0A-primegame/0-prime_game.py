@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 def isWinner(x, nums):
     """
     Determine the winner of a game played between Maria and Ben over
