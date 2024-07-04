@@ -1,62 +1,87 @@
 #!/usr/bin/python3
+'''
+This script determines the winner of a prime number game between Maria and Ben.
+'''
+
 
 def isWinner(x, nums):
-    def sieve_of_eratosthenes(max_num):
-        """
-        Return a list of primes up to max_num using Sieve of Eratosthenes
-        """
-        if max_num < 2:
-            return []
-        is_prime = [True] * (max_num + 1)
-        p = 2
-        while p * p <= max_num:
-            if is_prime[p]:
-                for i in range(p * p, max_num + 1, p):
-                    is_prime[i] = False
-            p += 1
-        return [p for p in range(2, max_num + 1) if is_prime[p]]
+    '''
+    Determines the winner of the prime game based on the number of rounds won.
 
-    max_n = max(nums)
-    primes = sieve_of_eratosthenes(max_n)
-    wins = {'Maria': 0, 'Ben': 0}
+    Args:
+        x (int): Number of rounds to play.
+        nums (list): List of integers representing the # of items in each round
 
-    for n in nums:
-        if n == 1:
-            # Ben wins directly if n is 1 because there are no primes to pick
-            wins['Ben'] += 1
-            continue
+    Returns:
+        str: Name of the winner ('Maria' or 'Ben'), or None if it's a tie.
+    '''
+    winnerCounter = {'Maria': 0, 'Ben': 0}
 
-        available = set(range(1, n + 1))
-        current_player = 'Maria'
+    for i in range(x):
+        roundWinner = isRoundWinner(nums[i], x)
+        if roundWinner is not None:
+            winnerCounter[roundWinner] += 1
 
-        while True:
-            found_move = False
-            for prime in primes:
-                if prime > n:
-                    break
-                if prime in available:
-                    found_move = True
-                    # Remove prime and its multiples from available numbers
-                    for multiple in range(prime, n + 1, prime):
-                        if multiple in available:
-                            available.remove(multiple)
-                    break
-
-            if not found_move:
-                break
-
-            # Switch turn
-            current_player = 'Ben' if current_player == 'Maria' else 'Maria'
-
-        # After the loop, current_player cannot make a move
-        if current_player == 'Maria':
-            wins['Ben'] += 1
-        else:
-            wins['Maria'] += 1
-
-    if wins['Maria'] > wins['Ben']:
+    if winnerCounter['Maria'] > winnerCounter['Ben']:
         return 'Maria'
-    elif wins['Ben'] > wins['Maria']:
+    elif winnerCounter['Ben'] > winnerCounter['Maria']:
         return 'Ben'
     else:
         return None
+
+
+def isRoundWinner(n, x):
+    '''
+    Determines the winner of a single round of the prime game.
+
+    Args:
+        n (int): Number of items in the round.
+        x (int): Total number of rounds.
+
+    Returns:
+        str: Name of the round winner ('Maria' or 'Ben'), or None if no winner.
+    '''
+    list = [i for i in range(1, n + 1)]
+    players = ['Maria', 'Ben']
+
+    for i in range(n):
+        currentPlayer = players[i % 2]
+        selectedIdxs = []
+        prime = -1
+        for idx, num in enumerate(list):
+            if prime != -1:
+                if num % prime == 0:
+                    selectedIdxs.append(idx)
+            else:
+                if isPrime(num):
+                    selectedIdxs.append(idx)
+                    prime = num
+
+        if prime == -1:
+            if currentPlayer == players[0]:
+                return players[1]
+            else:
+                return players[0]
+        else:
+            for idx, val in enumerate(selectedIdxs):
+                del list[val - idx]
+    return None
+
+
+def isPrime(n):
+    '''
+    Checks if a number is prime.
+
+    Args:
+        n (int): Number to check for primality.
+
+    Returns:
+        bool: True if the number is prime, False otherwise.
+    '''
+    if n == 1 or n == 0 or (n % 2 == 0 and n > 2):
+        return False
+    else:
+        for i in range(3, int(n**(1/2))+1, 2):
+            if n % i == 0:
+                return False
+        return True
